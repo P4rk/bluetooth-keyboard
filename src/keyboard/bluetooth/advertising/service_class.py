@@ -1,0 +1,3 @@
+
+# HID is defined as 0x1812
+HUMAN_INTERFACE_DEVICE = 0x1812
