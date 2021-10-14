@@ -1,2 +1,2 @@
-cp -r src/ /pyboard/
-cp -r lib/ /pyboard/
+cp -r src/* /pyboard/
+cp -r lib/* /pyboard/

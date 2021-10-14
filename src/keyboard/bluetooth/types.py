@@ -21,7 +21,7 @@ class Bluetooth:
         self.ble.active(1)
         self.ble.irq(self._bluetooth_event)
 
-        self.conn_handle = None
+        self._conn_handle = None
 
         # register services
         self.ble.config(gap_name=self.name)
@@ -46,6 +46,25 @@ class Bluetooth:
         self.ble.gatts_write(self.h_d1, struct.pack("<BB", 1, 1))  # report: id=1, type=input
         self.ble.gatts_write(self.h_d2, struct.pack("<BB", 1, 2))  # report: id=1, type=output
         self.ble.gatts_write(self.h_proto, b"\x01")  # protocol mode: report
+        self._advertise()
+
+    @property
+    def conn_handler(self):
+        return self._conn_handle
+
+    @conn_handler.setter
+    def conn_handle(self, value):
+        if isinstance(value, bytes):
+            self._conn_handle = int.from_bytes(value, 'little')
+            return
+        elif isinstance(value, int):
+            self._conn_handle = value
+            return
+        elif value is None:
+            self._conn_handle = None
+            self._advertise()
+            return
+        raise RuntimeError(f'conn_handle not bytes or int is ({type(value)}){value}')
 
     def _bluetooth_event(self, event: BluetoothEvent, data: Tuple) -> None:
         """
@@ -78,6 +97,8 @@ class Bluetooth:
             self.ble.gatts_notify(
                 self.conn_handle,
                 self.h_rep,
-                b"\x00\x00\x00\x00\x00\x00\x00\x00"
+                struct.pack("8B", 0, 0, 0, 0, 0, 0, 0, 0),
             )
+        else:
+            print('Conn handle None')
 

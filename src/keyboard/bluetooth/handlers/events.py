@@ -38,19 +38,41 @@ SET_SECRET = const(30)
 BluetoothEvent = const
 
 
+"""
+Note: As an optimisation to prevent unnecessary allocations, the addr, adv_data,
+char_data, notify_data, and uuid entries in the tuples are read-only memoryview instances
+pointing to bluetooth’s internal ringbuffer, and are only valid during the invocation of 
+the IRQ handler function. If your program needs to save one of these values to access 
+after the IRQ handler has returned (e.g. by saving it in a class instance or global 
+variable), then it needs to take a copy of the data, either by using bytes() or 
+bluetooth.UUID()
+"""
+
+
 def _central_connect_handler(bluetooth_cls, event, data):
-    bluetooth_cls.conn_handle, addr_type, addr = data
+    # A central has connected to this peripheral
+    conn_handle, addr_type, addr = data
+    print(bytes(conn_handle))
+    bluetooth_cls.conn_handle = bytes(conn_handle)
+
+
+def _central_disconnect_handler(bluetooth_cls, event, data):
+    # A central has disconnected from this peripheral.
+    conn_handle, addr_type, addr = data
+    bluetooth_cls.conn_handle = None
 
 
 def _default_handler(bluetooth_cls, event, data):
-    print("event: ", event, data)
+    pass
 
 
 EVENT_MAP = {
     CENTRAL_CONNECT: _central_connect_handler,
+    CENTRAL_DISCONNECT: _central_disconnect_handler,
 }
 
 
 def handle_event(bluetooth_cls, event, data):
+    print("event: ", event, data)
     func = EVENT_MAP.get(event, _default_handler)
     func(bluetooth_cls, event, data)
